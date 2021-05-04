@@ -10,22 +10,58 @@ from spacepy import pycdf
 
 ###############################################################################
 """
-Example code that loads electron and proton (+alphas) fluxes (and errors) for
-'ept' 'north' telescope from Apr 15 to Apr 16 2021 into a Pandas dataframe. In
-general available are 'sun', 'asun', 'north', and 'south' viewing directions
-for 'ept' and 'het' telescopes of SolO/EPD.
+Example code that loads low latency (ll) electron and proton (+alphas) fluxes
+(and errors) for 'ept' 'north' telescope from Apr 15 2021 to Apr 16 2021 into
+two Pandas dataframes (one for protons & alphas, one for electrons). In general
+available are 'sun', 'asun', 'north', and 'south' viewing directions for 'ept'
+and 'het' telescopes of SolO/EPD.
 
-from epd_ll_loader import *
+from epd_loader import *
 
 df_protons, df_electrons, energies = \
 read_epd_cdf('ept', 'north', 'll', 20210415, 20210416,
 path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
 
+# plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
 plt.show()
 
+# plot electrons
 ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
 plt.show()
+"""
+
+"""
+Example code that loads level 2 (l2) electron and proton (+alphas) fluxes
+(and errors) for 'het' 'sun' telescope from Aug 20 2020 to Aug 20 2020 into
+two Pandas dataframes (one for protons & alphas, one for electrons).
+
+from epd_loader import *
+
+df_protons, df_electrons, energies = \
+read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821,
+path='/home/gieseler/uni/solo/data/l2/epd/')
+
+# plot protons and alphas
+ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
+plt.show()
+
+# plot electrons
+ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
+plt.show()
+
+"""
+
+"""
+Level 2 data can be downloaded from http://soar.esac.esa.int/soar/ using
+epd_l2_download(). Following example downloads 'ept' 'north' telescope data for
+Aug 20 2020 (downloads 1 file/day per call).
+
+epd_l2_download('ept', 'north', 20200820,
+    '/home/gieseler/uni/solo/data/l2/epd/')
+
+epd_ll_download() provides the same functionality for low latency data but
+doesn't work reliably.
 """
 ###############################################################################
 
@@ -129,12 +165,15 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
         if level.lower() == 'll':
             protons = 'H'
             electrons = 'Ele'
+        if level.lower() == 'l2':
+            protons = 'H'  # EPOCH
+            electrons = 'Electron'  # EPOCH_4, QUALITY_FLAG_4
 
     # df_epd = pd.DataFrame(cdf_epd[protons+'_Flux'][...][:,0], \
     #               index=cdf_epd['EPOCH'][...], columns = [protons+'_Flux_0'])
     df_epd_p = pd.DataFrame(cdf_epd['QUALITY_FLAG'][...],
-                          index=cdf_epd['EPOCH'][...],
-                          columns=['QUALITY_FLAG'])
+                            index=cdf_epd['EPOCH'][...],
+                            columns=['QUALITY_FLAG'])
 
     for i in range(cdf_epd[protons+'_Flux'][...].shape[1]):
         # p intensities:
@@ -161,16 +200,22 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
 
     if level.lower() == 'll':
         df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG'][...],
-                              index=cdf_epd['EPOCH'][...],
-                              columns=['QUALITY_FLAG'])
+                                index=cdf_epd['EPOCH'][...],
+                                columns=['QUALITY_FLAG'])
     if level.lower() == 'l2':
-        df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG_1'][...],
-                              index=cdf_epd['EPOCH_1'][...],
-                              columns=['QUALITY_FLAG_1'])
+        if dataset.lower() == 'ept':
+            df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG_1'][...],
+                                    index=cdf_epd['EPOCH_1'][...],
+                                    columns=['QUALITY_FLAG_1'])
+        if dataset.lower() == 'het':
+            df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG_4'][...],
+                                    index=cdf_epd['EPOCH_4'][...],
+                                    columns=['QUALITY_FLAG_4'])
 
     for i in range(cdf_epd[electrons+'_Flux'][...].shape[1]):
         # e intensities:
-        df_epd_e[electrons+f'_Flux_{i}'] = cdf_epd[electrons+'_Flux'][...][:, i]
+        df_epd_e[electrons+f'_Flux_{i}'] = \
+            cdf_epd[electrons+'_Flux'][...][:, i]
         # e errors:
         if level.lower() == 'll':
             df_epd_e[f'Ele_Flux_Sigma_{i}'] = \
@@ -184,7 +229,8 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
         protons+"_Bins_Low_Energy": cdf_epd[protons+'_Bins_Low_Energy'][...],
         protons+"_Bins_Width": cdf_epd[protons+'_Bins_Width'][...],
         electrons+"_Bins_Text": cdf_epd[electrons+'_Bins_Text'][...],
-        electrons+"_Bins_Low_Energy": cdf_epd[electrons+'_Bins_Low_Energy'][...],
+        electrons+"_Bins_Low_Energy":
+            cdf_epd[electrons+'_Bins_Low_Energy'][...],
         electrons+"_Bins_Width": cdf_epd[electrons+'_Bins_Width'][...]
         }
 
@@ -202,7 +248,7 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
     return df_epd_p, df_epd_e, energies_dict
 
 
-# old
+# old:
 def read_epd_ll_cdf(dataset, viewing, level, startdate, enddate, path=None):
     """
     INPUT:
