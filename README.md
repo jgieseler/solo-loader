@@ -13,7 +13,8 @@ and 'het' telescopes of SolO/EPD.
 from epd_loader import *
 
 df_protons, df_electrons, energies = \
-read_epd_cdf('ept', 'north', 'll', 20210415, 20210416, path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
+read_epd_cdf('ept', 'north', 'll', 20210415, 20210416, \
+    path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -33,7 +34,8 @@ two Pandas dataframes (one for protons & alphas, one for electrons).
 from epd_loader import *
 
 df_protons, df_electrons, energies = \
-read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, path='/home/gieseler/uni/solo/data/l2/epd/')
+read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, \
+    path='/home/gieseler/uni/solo/data/l2/epd/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
