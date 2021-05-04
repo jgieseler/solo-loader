@@ -10,6 +10,18 @@ from spacepy import pycdf
 
 ###############################################################################
 """
+Level 2 data can be downloaded from http://soar.esac.esa.int/soar/ using
+epd_l2_download(). Following example downloads 'ept' 'north' telescope data for
+Aug 20 2020 (downloads 1 file/day per call).
+
+epd_l2_download('ept', 'north', 20200820,
+    '/home/gieseler/uni/solo/data/l2/epd/')
+
+epd_ll_download() provides the same functionality for low latency data but
+doesn't work reliably.
+"""
+
+"""
 Example code that loads low latency (ll) electron and proton (+alphas) fluxes
 (and errors) for 'ept' 'north' telescope from Apr 15 2021 to Apr 16 2021 into
 two Pandas dataframes (one for protons & alphas, one for electrons). In general
@@ -50,18 +62,6 @@ plt.show()
 ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
 plt.show()
 
-"""
-
-"""
-Level 2 data can be downloaded from http://soar.esac.esa.int/soar/ using
-epd_l2_download(). Following example downloads 'ept' 'north' telescope data for
-Aug 20 2020 (downloads 1 file/day per call).
-
-epd_l2_download('ept', 'north', 20200820,
-    '/home/gieseler/uni/solo/data/l2/epd/')
-
-epd_ll_download() provides the same functionality for low latency data but
-doesn't work reliably.
 """
 ###############################################################################
 
