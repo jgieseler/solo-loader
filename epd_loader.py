@@ -80,6 +80,7 @@ def get_epd_filelist(dataset, viewing, level, startdate, enddate, path=None):
     INPUT:
         dataset: 'ept' or 'het'
         viewing: 'sun', 'asun', 'north', 'south'
+        level: 'll', 'l2'
         startdate, enddate: YYYYMMDD
         path: full directory to cdf files; e.g.:
               '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
@@ -133,6 +134,7 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
     INPUT:
         dataset: 'ept' or 'het' (string)
         viewing: 'sun', 'asun', 'north', or 'south' (string)
+        level: 'll', 'l2'
         startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
         path: full directory to cdf files; e.g.:
               '/home/gieseler/uni/solo/data/low_latency/epd/LL02/' (string)
@@ -254,6 +256,7 @@ def read_epd_ll_cdf(dataset, viewing, level, startdate, enddate, path=None):
     INPUT:
         dataset: 'ept' or 'het' (string)
         viewing: 'sun', 'asun', 'north', or 'south' (string)
+        level: 'll', 'l2'
         startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
         path: full directory to cdf files; e.g.:
               '/home/gieseler/uni/solo/data/low_latency/epd/LL02/' (string)
