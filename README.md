@@ -1,8 +1,9 @@
 # solo-loader
 
-Data loader for SolO/EPD EPT and HET level 2 (L2) and low latency (ll) data provided by CDF files from http://soar.esac.esa.int/soar.
+Data loader for SolO/EPD EPT and HET level 2 (L2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
 
 ## Example 1 - low latency data
+
 Example code that loads low latency (ll) electron and proton (+alphas) fluxes
 (and errors) for EPT NORTH telescope from Apr 15 2021 to Apr 16 2021 into
 two Pandas dataframes (one for protons & alphas, one for electrons). In general
@@ -26,6 +27,7 @@ plt.show()
 ```
 
 ## Example 2 - level 2 data
+
 Example code that loads level 2 (l2) electron and proton (+alphas) fluxes
 (and errors) for HET SUN telescope from Aug 20 2020 to Aug 20 2020 into
 two Pandas dataframes (one for protons & alphas, one for electrons).
@@ -47,7 +49,8 @@ plt.show()
 ```
 
 ## Data download within Python
-Level 2 data can be downloaded from http://soar.esac.esa.int/soar using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
+
+Level 2 data can be downloaded from <http://soar.esac.esa.int/soar> using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
 Aug 20 2020 to the dir `/home/gieseler/uni/solo/data/l2/epd/`. Right now rudimentary working with one download (1 file/day) per call.
 
 ```python
