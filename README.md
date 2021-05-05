@@ -15,7 +15,7 @@ from epd_loader import *
 
 df_protons, df_electrons, energies = \
 read_epd_cdf('ept', 'north', 'll', 20210415, 20210416, \
-    path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
+    path='/home/userxyz/uni/solo/data/low_latency/epd/LL02/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -37,7 +37,7 @@ from epd_loader import *
 
 df_protons, df_electrons, energies = \
 read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, \
-    path='/home/gieseler/uni/solo/data/l2/epd/')
+    path='/home/userxyz/uni/solo/data/l2/epd/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -51,12 +51,12 @@ plt.show()
 ## Data download within Python
 
 Level 2 data can be downloaded from <http://soar.esac.esa.int/soar> using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
-Aug 20 2020 to the dir `/home/gieseler/uni/solo/data/l2/epd/`. Right now rudimentary working with one download (1 file/day) per call.
+Aug 20 2020 to the dir `/home/userxyz/uni/solo/data/l2/epd/`. Right now rudimentary working with one download (1 file/day) per call.
 
 ```python
 from epd_loader import *
 
-epd_l2_download('ept', 'north', 20200820, '/home/gieseler/uni/solo/data/l2/epd/')
+epd_l2_download('ept', 'north', 20200820, '/home/userxyz/uni/solo/data/l2/epd/')
 ```
 
 `epd_ll_download()` provides the same functionality for low latency data but
