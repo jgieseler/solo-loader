@@ -75,10 +75,10 @@ def cdf_info(cdf):
     return
 
 
-def get_epd_filelist(dataset, viewing, level, startdate, enddate, path=None):
+def get_epd_filelist(sensor, viewing, level, startdate, enddate, path=None):
     """
     INPUT:
-        dataset: 'ept' or 'het'
+        sensor: 'ept' or 'het'
         viewing: 'sun', 'asun', 'north', 'south'
         level: 'll', 'l2'
         startdate, enddate: YYYYMMDD
@@ -107,16 +107,16 @@ def get_epd_filelist(dataset, viewing, level, startdate, enddate, path=None):
     filelist_south = []
     for i in range(startdate, enddate+1):
         filelist_sun = filelist_sun + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+dataset+'-sun-rates_' +
+            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-sun-rates_' +
                       str(i) + t_str + '_V*.cdf')
         filelist_asun = filelist_asun + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+dataset+'-asun-rates_' +
+            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-asun-rates_' +
                       str(i) + t_str + '_V???.cdf')
         filelist_north = filelist_north + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+dataset+'-north-rates_' +
+            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-north-rates_' +
                       str(i) + t_str + '_V*.cdf')
         filelist_south = filelist_south + \
-            glob.glob(path+'solo_'+l_str+'_epd-'+dataset+'-south-rates_' +
+            glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-south-rates_' +
                       str(i) + t_str + '_V???.cdf')
 
     if viewing == 'sun':
@@ -129,10 +129,10 @@ def get_epd_filelist(dataset, viewing, level, startdate, enddate, path=None):
         return filelist_south
 
 
-def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
+def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None):
     """
     INPUT:
-        dataset: 'ept' or 'het' (string)
+        sensor: 'ept' or 'het' (string)
         viewing: 'sun', 'asun', 'north', or 'south' (string)
         level: 'll', 'l2'
         startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
@@ -151,19 +151,19 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
         df_p, df_e, energies = read_epd_cdf('ept', 'north', level='l2',
 20200820, 20200821, path='/home/gieseler/uni/solo/data/l2/epd/')
     """
-    filelist = get_epd_filelist(dataset.lower(), viewing.lower(),
+    filelist = get_epd_filelist(sensor.lower(), viewing.lower(),
                                 level.lower(), startdate, enddate, path=path)
 
     cdf_epd = pycdf.concatCDF([pycdf.CDF(f) for f in filelist])
 
-    if dataset.lower() == 'ept':
+    if sensor.lower() == 'ept':
         if level.lower() == 'll':
             protons = 'Prot'
             electrons = 'Ele'
         if level.lower() == 'l2':
             protons = 'Ion'
             electrons = 'Electron'
-    if dataset.lower() == 'het':
+    if sensor.lower() == 'het':
         if level.lower() == 'll':
             protons = 'H'
             electrons = 'Ele'
@@ -188,7 +188,7 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
             df_epd_p[protons+f'_Uncertainty_{i}'] = \
                 cdf_epd[protons+'_Uncertainty'][...][:, i]
 
-    if dataset.lower() == 'ept':
+    if sensor.lower() == 'ept':
         for i in range(cdf_epd['Alpha_Flux'][...].shape[1]):
             # alpha intensities:
             df_epd_p[f'Alpha_Flux_{i}'] = cdf_epd['Alpha_Flux'][...][:, i]
@@ -205,11 +205,11 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
                                 index=cdf_epd['EPOCH'][...],
                                 columns=['QUALITY_FLAG'])
     if level.lower() == 'l2':
-        if dataset.lower() == 'ept':
+        if sensor.lower() == 'ept':
             df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG_1'][...],
                                     index=cdf_epd['EPOCH_1'][...],
                                     columns=['QUALITY_FLAG_1'])
-        if dataset.lower() == 'het':
+        if sensor.lower() == 'het':
             df_epd_e = pd.DataFrame(cdf_epd['QUALITY_FLAG_4'][...],
                                     index=cdf_epd['EPOCH_4'][...],
                                     columns=['QUALITY_FLAG_4'])
@@ -236,7 +236,7 @@ def read_epd_cdf(dataset, viewing, level, startdate, enddate, path=None):
         electrons+"_Bins_Width": cdf_epd[electrons+'_Bins_Width'][...]
         }
 
-    if dataset.lower() == 'ept':
+    if sensor.lower() == 'ept':
         energies_dict["Alpha_Bins_Text"] = cdf_epd['Alpha_Bins_Text'][...]
         energies_dict["Alpha_Bins_Low_Energy"] = \
             cdf_epd['Alpha_Bins_Low_Energy'][...]
@@ -262,7 +262,7 @@ def get_filename_url(cd):
     return fname[0][1:-1]
 
 
-def epd_ll_download(dataset, viewing, date, path=''):
+def epd_ll_download(sensor, viewing, date, path=''):
     """
     Download EPD low latency data from http://soar.esac.esa.int/soar
     One file/day per call.
@@ -298,25 +298,35 @@ def epd_ll_download(dataset, viewing, date, path=''):
         print("Module tqdm not installed, won't show progress bar.")
         tqdm_available = False
 
-    # Problem: see header of function for details
-    url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
-          'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
-          dataset.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
-          'T000101-'+str(date+1)+'T000100&product_type=LOW_LATENCY'
+    # get list of available data files, obtain corresponding start & end time
+    fl = get_available_soar_files(date, date, sensor, 'll') 
+    try:
+        stime = fl[0][-32:-25]
+        etime = fl[0][-16:-9]
 
-    # Get filename from url
-    file_name = get_filename_url(
-        urllib.request.urlopen(url).headers['Content-Disposition'])
+        # Problem: see header of function for details
+        url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
+            'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
+            sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+            stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
 
-    if tqdm_available:
-        download_url(url, path+file_name)
-    else:
-        urllib.request.urlretrieve(url, path+file_name)
+        # Get filename from url
+        file_name = get_filename_url(
+            urllib.request.urlopen(url).headers['Content-Disposition'])
 
-    return path+file_name
+        if tqdm_available:
+            download_url(url, path+file_name)
+        else:
+            urllib.request.urlretrieve(url, path+file_name)
+
+        return path+file_name
+    except:
+        print('No data found at SOAR!')
+        
+        return
 
 
-def epd_l2_download(dataset, viewing, date, path=''):
+def epd_l2_download(sensor, viewing, date, path=''):
     """
     Download EPD level 2 data from http://soar.esac.esa.int/soar
     One file/day per call.
@@ -348,7 +358,7 @@ def epd_l2_download(dataset, viewing, date, path=''):
 
     url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
           'retrieval_type=LAST_PRODUCT&data_item_id=solo_L2_epd-' + \
-          dataset.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
+          sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
           '&product_type=SCIENCE'
 
     # Get filename from url
@@ -361,3 +371,54 @@ def epd_l2_download(dataset, viewing, date, path=''):
         urllib.request.urlretrieve(url, path+file_name)
 
     return path+file_name
+
+
+def get_available_soar_files(startdate, enddate, sensor, level='l2'):
+    from astropy.io.votable import parse_single_table
+
+    # add 1 day to enddate to better work with SOAR's API
+    enddate = (pd.to_datetime(str(enddate))+pd.to_timedelta('1d')).strftime('%Y%m%d')  
+
+    sy = str(startdate)[0:4]
+    sm = str(startdate)[4:6]
+    sd = str(startdate)[6:8]
+
+    ey = str(enddate)[0:4]
+    em = str(enddate)[4:6]
+    ed = str(enddate)[6:8]
+
+    if level.lower() == 'l2':
+        data_type = 'v_sc_data_item'   
+    if level.lower() == 'll':
+        data_type = 'v_ll_data_item'
+
+    # url = 'http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&' + \
+    #        'LANG=ADQL&FORMAT=votable_plain&QUERY=SELECT+*+FROM+'+data_type + \
+    #        '+WHERE+(instrument=%27EPD%27)+AND+((begin_time%3E%27'+sy+'-'+sm + \
+    #        '-'+sd+'+00:00:00%27)+AND+(end_time%3C%27'+ey+'-'+em+'-'+ed + \
+    #        '+23:59:00%27))'
+
+    url = "http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&" + \
+           "LANG=ADQL&FORMAT=votable_plain&QUERY=SELECT+*+FROM+"+data_type + \
+           "+WHERE+(instrument='EPD')+AND+((begin_time%3E%3D'"+sy+"-"+sm + \
+           "-"+sd+"+00:00:00')+AND+(end_time%3C%3D'"+ey+"-"+em+"-"+ed + \
+           "+01:00:00'))"
+
+    filelist = urllib.request.urlretrieve(url)
+
+    # open VO table, convert to astropy table, convert to pandas dataframe
+    df = parse_single_table(filelist[0]).to_table().to_pandas()
+
+    # convert bytestrings to unicode, from stackoverflow.com/a/67051068/2336056
+    for col, dtype in df.dtypes.items():
+        if dtype == np.object:  # Only process object columns.
+            # decode, or return original value if decode return Nan
+            df[col] = df[col].str.decode('utf-8').fillna(df[col]) 
+
+    # list filenames for given telescope (e.g., 'HET'), sorted alphabetically
+    filelist = df['filename'][df['sensor'] == sensor.upper()].sort_values()
+    # filelist = df[df['sensor'] == sensor.upper()]
+
+    return filelist.values
+    
+   

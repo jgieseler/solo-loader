@@ -59,5 +59,10 @@ from epd_loader import *
 epd_l2_download('ept', 'north', 20200820, '/home/userxyz/uni/solo/data/l2/epd/')
 ```
 
-`epd_ll_download()` provides the same functionality for low latency data but
-doesn't work reliably at the moment.
+`epd_ll_download()` provides the same functionality for low latency data:
+
+```python
+from epd_loader import *
+
+epd_ll_download('ept', 'north', 20200820, '/home/userxyz/uni/solo/data/ll/epd/')
+```
