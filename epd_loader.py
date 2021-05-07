@@ -1,10 +1,12 @@
 import glob
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import re
 import urllib.request
 
+from pathlib import Path
 from spacepy import pycdf
 
 
@@ -75,17 +77,19 @@ def cdf_info(cdf):
     return
 
 
-def get_epd_filelist(sensor, viewing, level, startdate, enddate, path=None):
+def get_epd_filelist(sensor, level, startdate, enddate, path=None,
+                     filenames_only=False):
     """
     INPUT:
         sensor: 'ept' or 'het'
-        viewing: 'sun', 'asun', 'north', 'south'
         level: 'll', 'l2'
         startdate, enddate: YYYYMMDD
         path: full directory to cdf files; e.g.:
               '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
+        filenames_only: if True only give the filenames, not the full path
     RETURNS:
-        List of files matching selection criteria.
+        Dictionary with four entries for 'sun', 'asun', 'north', 'south';
+        each containing a list of files matching selection criteria.
     """
 
     if level == 'll':
@@ -119,17 +123,22 @@ def get_epd_filelist(sensor, viewing, level, startdate, enddate, path=None):
             glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-south-rates_' +
                       str(i) + t_str + '_V???.cdf')
 
-    if viewing == 'sun':
-        return filelist_sun
-    if viewing == 'asun':
-        return filelist_asun
-    if viewing == 'north':
-        return filelist_north
-    if viewing == 'south':
-        return filelist_south
+    if filenames_only:
+        filelist_sun = [os.path.basename(x) for x in filelist_sun]
+        filelist_asun = [os.path.basename(x) for x in filelist_asun]
+        filelist_north = [os.path.basename(x) for x in filelist_north]
+        filelist_south = [os.path.basename(x) for x in filelist_south]
 
+    filelist = {
+        'sun': filelist_sun,
+        'asun': filelist_asun,
+        'north': filelist_north,
+        'south': filelist_south
+        }
+    return filelist
 
-def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None):
+def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
+                 autodownload=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
@@ -138,21 +147,28 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None):
         startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
         path: full directory to cdf files; e.g.:
               '/home/gieseler/uni/solo/data/low_latency/epd/LL02/' (string)
+        autodownload: if True will try to download missing data files from SOAR
     RETURNS:
-        1. Pandas dataframe with proton and electron fluxes and errors (for
-            EPT also Alpha particles) in 'particles / (s cm^2 sr MeV)'
-        2. Dictionary with energy information for all particles:
+        1. Pandas dataframe with proton fluxes and errors (for EPT also Alpha
+           particles) in 'particles / (s cm^2 sr MeV)'
+        2. Pandas dataframe with electron fluxes and errors in
+           'particles / (s cm^2 sr MeV)'
+        3. Dictionary with energy information for all particles:
             - String with energy channel info
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
     EXAMPLE:
-        df_p, df_e, energies = read_epd_cdf('ept', 'north', level='ll',
+        df_p, df_e, energies = read_epd_cdf('ept', 'north', 'll',
 20210415, 20210416, path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
-        df_p, df_e, energies = read_epd_cdf('ept', 'north', level='l2',
+        df_p, df_e, energies = read_epd_cdf('ept', 'north', 'l2',
 20200820, 20200821, path='/home/gieseler/uni/solo/data/l2/epd/')
     """
-    filelist = get_epd_filelist(sensor.lower(), viewing.lower(),
-                                level.lower(), startdate, enddate, path=path)
+    # filelist = get_epd_filelist(sensor.lower(), viewing.lower(),
+    #                             level.lower(), startdate, enddate, path=path)
+    filelist = get_epd_filelist(sensor.lower(), level.lower(), startdate,
+                                enddate, path=path)[viewing.lower()]
+
+    print('a')                  
 
     cdf_epd = pycdf.concatCDF([pycdf.CDF(f) for f in filelist])
 
@@ -270,12 +286,6 @@ def epd_ll_download(sensor, viewing, date, path=''):
     Example:
         epd_ll_download('ept', 'north', 20210415,
                         '/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
-
-    Problem: Low latency files have random start time (e.g. T000101) that needs
-             to be explicitly given for downloading the file. One workaround
-             would be to get list of available files first (provided as .json),
-             and from that extract the file name. Example get URL would be:
-             http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=json&QUERY=SELECT+*+FROM+v_ll_data_item+WHERE+(instrument='EPD')+AND+((begin_time>'2021-04-15+00:00:00')+AND+(end_time<'2021-04-16+01:0:00'))
     """
 
     try:
@@ -304,11 +314,12 @@ def epd_ll_download(sensor, viewing, date, path=''):
         stime = fl[0][-32:-25]
         etime = fl[0][-16:-9]
 
-        # Problem: see header of function for details
         url = 'http://soar.esac.esa.int/soar-sl-tap/data?' + \
             'retrieval_type=LAST_PRODUCT&data_item_id=solo_LL02_epd-' + \
             sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
             stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
+
+        print(url)
 
         # Get filename from url
         file_name = get_filename_url(
@@ -392,17 +403,13 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     if level.lower() == 'll':
         data_type = 'v_ll_data_item'
 
-    # url = 'http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&' + \
-    #        'LANG=ADQL&FORMAT=votable_plain&QUERY=SELECT+*+FROM+'+data_type + \
-    #        '+WHERE+(instrument=%27EPD%27)+AND+((begin_time%3E%27'+sy+'-'+sm + \
-    #        '-'+sd+'+00:00:00%27)+AND+(end_time%3C%27'+ey+'-'+em+'-'+ed + \
-    #        '+23:59:00%27))'
-
     url = "http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&" + \
-           "LANG=ADQL&FORMAT=votable_plain&QUERY=SELECT+*+FROM+"+data_type + \
+           "LANG=ADQL&retrieval_type=LAST_PRODUCT&FORMAT=votable_plain&QUERY=SELECT+*+FROM+"+data_type + \
            "+WHERE+(instrument='EPD')+AND+((begin_time%3E%3D'"+sy+"-"+sm + \
            "-"+sd+"+00:00:00')+AND+(end_time%3C%3D'"+ey+"-"+em+"-"+ed + \
            "+01:00:00'))"
+
+    print(url)
 
     filelist = urllib.request.urlretrieve(url)
 
@@ -417,8 +424,28 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
 
     # list filenames for given telescope (e.g., 'HET'), sorted alphabetically
     filelist = df['filename'][df['sensor'] == sensor.upper()].sort_values()
-    # filelist = df[df['sensor'] == sensor.upper()]
 
     return filelist.values
     
-   
+
+"""
+input_path = '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
+sensor = 'ept'
+viewing = 'north'
+
+
+# fl = get_epd_filelist('ept', 'll', 20210415, 20210422,filenames_only=True)    
+# fl['asun']+fl['north']+fl['south']+fl['sun']  
+
+fls = get_available_soar_files(20210415, 20210418, sensor, 'll') 
+
+
+for i in fls:
+    my_file = Path(input_path)/i
+    if not my_file.is_file():
+        print(i+' - MISSING => DOWNLOADING...')
+        tdate = int(i.split('_')[3].split('T')[0])
+        tview = i.split('-')[2]
+        _ = epd_ll_download(sensor, tview, tdate, path=input_path)
+        # _ = [epd_ll_download(sensor, view, tdate, path=input_path) for view in ['asun', 'north', 'south', 'sun']]
+"""
