@@ -163,12 +163,21 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
         df_p, df_e, energies = read_epd_cdf('ept', 'north', 'l2',
 20200820, 20200821, path='/home/gieseler/uni/solo/data/l2/epd/')
     """
+
+    # lazy approach to avoid providing 'path' on my computer (Jan)    
+    if path is None:
+        if level.lower() == 'll':
+            path = '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
+        if level.lower() == 'l2':
+            path = '/home/gieseler/uni/solo/data/l2/epd/'
+
+    if autodownload:
+        autodownload_cdf(startdate, enddate, sensor, level, path)
+    
     # filelist = get_epd_filelist(sensor.lower(), viewing.lower(),
     #                             level.lower(), startdate, enddate, path=path)
     filelist = get_epd_filelist(sensor.lower(), level.lower(), startdate,
-                                enddate, path=path)[viewing.lower()]
-
-    print('a')                  
+                                enddate, path=path)[viewing.lower()]                 
 
     cdf_epd = pycdf.concatCDF([pycdf.CDF(f) for f in filelist])
 
@@ -319,8 +328,6 @@ def epd_ll_download(sensor, viewing, date, path=''):
             sensor.lower()+'-'+viewing.lower()+'-rates_'+str(date) + \
             stime+'-'+str(date+1)+etime+'&product_type=LOW_LATENCY'
 
-        print(url)
-
         # Get filename from url
         file_name = get_filename_url(
             urllib.request.urlopen(url).headers['Content-Disposition'])
@@ -447,24 +454,13 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     return filelist
     
 
-"""
-input_path = '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
-sensor = 'ept'
-viewing = 'north'
-
-
-# fl = get_epd_filelist('ept', 'll', 20210415, 20210422,filenames_only=True)    
-# fl['asun']+fl['north']+fl['south']+fl['sun']  
-
-fls = get_available_soar_files(20210415, 20210418, sensor, 'll') 
-
-
-for i in fls:
-    my_file = Path(input_path)/i
-    if not my_file.is_file():
-        print(i+' - MISSING => DOWNLOADING...')
-        tdate = int(i.split('_')[3].split('T')[0])
-        tview = i.split('-')[2]
-        _ = epd_ll_download(sensor, tview, tdate, path=input_path)
-        # _ = [epd_ll_download(sensor, view, tdate, path=input_path) for view in ['asun', 'north', 'south', 'sun']]
-"""
+def autodownload_cdf(startdate, enddate, sensor, level, path):
+    fls = get_available_soar_files(startdate, enddate, sensor, level) 
+    for i in fls:
+        my_file = Path(path)/i
+        if not my_file.is_file():
+            print(i+' MISSING => DOWNLOADING...')
+            tdate = int(i.split('_')[3].split('T')[0])
+            tview = i.split('-')[2]
+            _ = epd_ll_download(sensor, tview, tdate, path=path)
+    return
