@@ -388,7 +388,7 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     from astropy.io.votable import parse_single_table
 
     # add 1 day to enddate to better work with SOAR's API
-    enddate = (pd.to_datetime(str(enddate))+pd.to_timedelta('1d')).strftime('%Y%m%d')  
+    # enddate = (pd.to_datetime(str(enddate))+pd.to_timedelta('1d')).strftime('%Y%m%d')  
 
     sy = str(startdate)[0:4]
     sm = str(startdate)[4:6]
@@ -399,17 +399,23 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
     ed = str(enddate)[6:8]
 
     if level.lower() == 'l2':
-        data_type = 'v_sc_data_item'   
+        p_level = 'L2'  # "processing_level"
+    #     data_type = 'v_sc_data_item'   
     if level.lower() == 'll':
-        data_type = 'v_ll_data_item'
+        p_level = 'LL02'  # "processing_level"
+    #     data_type = 'v_ll_data_item'
+    data_type = 'v_public_files'
 
+    # url = "http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&" + \
+    #        "LANG=ADQL&retrieval_type=LAST_PRODUCT&FORMAT=votable_plain&QUERY=SELECT+*+FROM+"+data_type + \
+    #        "+WHERE+(instrument='EPD')+AND+((begin_time%3E%3D'"+sy+"-"+sm + \
+    #        "-"+sd+"+00:00:00')+AND+(end_time%3C%3D'"+ey+"-"+em+"-"+ed + \
+    #        "+01:00:00'))"
     url = "http://soar.esac.esa.int/soar-sl-tap/tap/sync?REQUEST=doQuery&" + \
            "LANG=ADQL&retrieval_type=LAST_PRODUCT&FORMAT=votable_plain&QUERY=SELECT+*+FROM+"+data_type + \
            "+WHERE+(instrument='EPD')+AND+((begin_time%3E%3D'"+sy+"-"+sm + \
-           "-"+sd+"+00:00:00')+AND+(end_time%3C%3D'"+ey+"-"+em+"-"+ed + \
+           "-"+sd+"+00:00:00')+AND+(begin_time%3C%3D'"+ey+"-"+em+"-"+ed + \
            "+01:00:00'))"
-
-    print(url)
 
     filelist = urllib.request.urlretrieve(url)
 
@@ -422,10 +428,23 @@ def get_available_soar_files(startdate, enddate, sensor, level='l2'):
             # decode, or return original value if decode return Nan
             df[col] = df[col].str.decode('utf-8').fillna(df[col]) 
 
-    # list filenames for given telescope (e.g., 'HET'), sorted alphabetically
-    filelist = df['filename'][df['sensor'] == sensor.upper()].sort_values()
+    # remove duplicates with older version number
+    df = df.sort_values('file_name')
+    df.drop_duplicates(subset=['item_id'], keep='last', inplace=True)
 
-    return filelist.values
+    # only use data level wanted; i.e., 'LL' or 'L2'
+    df = df[df['processing_level'] == p_level] 
+
+    # list filenames for given telescope (e.g., 'HET')
+    # filelist = df['filename'][df['sensor'] == sensor.upper()].sort_values()
+    filelist = [s for s in df['file_name'].values if sensor.lower() in s]
+      
+    # list filenames for 'rates' type (i.e., remove 'hcad')
+    filelist = [s for s in filelist if "rates" in s]
+    
+    # filelist.sort()
+
+    return filelist
     
 
 """
