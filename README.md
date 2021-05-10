@@ -50,6 +50,30 @@ plt.show()
 
 ## Data download within Python
 
+### Automatic download
+
+While using `read_epd_cdf()` to obtain the data, one can choose to automatically download missing data files. For that just add `autodownload=True` to the call of `read_epd_cdf()`:
+
+```python
+from epd_loader import *
+
+df_protons, df_electrons, energies = \
+read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, \
+    path='/home/userxyz/uni/solo/data/l2/epd/', \
+    autodownload=False)
+
+# plot protons and alphas
+ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
+plt.show()
+
+# plot electrons
+ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
+plt.show()
+```
+
+Note: The code will always download the *latest version* of the file available at SOAR. So in case a file `V01.cdf` is already locally present, `V02.cdf` will be downloaded nonetheless.
+### Manual download
+
 Level 2 data can be downloaded from <http://soar.esac.esa.int/soar> using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
 Aug 20 2020 to the dir `/home/userxyz/uni/solo/data/l2/epd/`. Right now rudimentary working with one download (1 file/day) per call.
 
