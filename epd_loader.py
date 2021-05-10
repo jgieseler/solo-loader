@@ -171,6 +171,11 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
         if level.lower() == 'l2':
             path = '/home/gieseler/uni/solo/data/l2/epd/'
 
+    # check for trailing '/' in 'path'
+    if path[-1] != '/':
+        print("'path' not ending with '/', adding it now (path should point to the directory containing the cdf files)")
+        path = path+'/'
+
     if autodownload:
         autodownload_cdf(startdate, enddate, sensor, level, path)
     
