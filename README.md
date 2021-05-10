@@ -50,9 +50,10 @@ plt.show()
 
 ## Data download within Python
 
+Data files can be downloaded from <http://soar.esac.esa.int/soar> directly from within python. They are saved in the folder probided by the `path` argument.
 ### Automatic download
 
-While using `read_epd_cdf()` to obtain the data, one can choose to automatically download missing data files. For that just add `autodownload=True` to the call of `read_epd_cdf()`:
+While using `read_epd_cdf()` to obtain the data, one can choose to automatically download missing data files. For that, just add `autodownload=True` to the call of `read_epd_cdf()`:
 
 ```python
 from epd_loader import *
@@ -74,7 +75,7 @@ plt.show()
 Note: The code will always download the *latest version* of the file available at SOAR. So in case a file `V01.cdf` is already locally present, `V02.cdf` will be downloaded nonetheless.
 ### Manual download
 
-Level 2 data can be downloaded from <http://soar.esac.esa.int/soar> using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
+Level 2 data can be manually downloaded using `epd_l2_download()`. Following example downloads EPT NORTH telescope data for
 Aug 20 2020 to the dir `/home/userxyz/uni/solo/data/l2/epd/`. Right now rudimentary working with one download (1 file/day) per call.
 
 ```python
