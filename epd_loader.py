@@ -151,11 +151,6 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
             - String with energy channel info
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
-    EXAMPLE:
-        df_p, df_e, energies = read_epd_cdf('ept', 'north', 'll',
-20210415, 20210416, path='/home/gieseler/uni/solo/data/low_latency/epd/LL02/')
-        df_p, df_e, energies = read_epd_cdf('ept', 'north', 'l2',
-20200820, 20200821, path='/home/gieseler/uni/solo/data/l2/epd/')
     """
 
     # lazy approach to avoid providing 'path' on my computer (Jan)    
@@ -259,6 +254,10 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
             if level.lower() == 'l2':
                 df_epd_e[f'Electron_Uncertainty_{i}'] = \
                     cdf_epd['Electron_Uncertainty'][...][:, i]
+
+        # replace FILLVALUES in dataframes with np.nan
+        df_epd_p.replace(-1e+31, np.nan)
+        df_epd_e.replace(-1e+31, np.nan)
 
         energies_dict = {
             protons+"_Bins_Text": cdf_epd[protons+'_Bins_Text'][...],
