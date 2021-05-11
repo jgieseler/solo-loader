@@ -23,7 +23,7 @@ from epd_loader import *
 
 df_protons, df_electrons, energies = \
 read_epd_cdf('ept', 'north', 'll', 20210415, 20210416,
-path='/home/gieseler/uni/solo/data/')
+path='/home/userxyz/solo/data/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -43,7 +43,7 @@ from epd_loader import *
 
 df_protons, df_electrons, energies = \
 read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821,
-path='/home/gieseler/uni/solo/data/')
+path='/home/userxyz/solo/data/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -61,10 +61,9 @@ epd_l2_download(). Following example downloads 'ept' 'north' telescope data for
 Aug 20 2020 (downloads 1 file/day per call).
 
 epd_l2_download('ept', 'north', 20200820,
-    '/home/gieseler/uni/solo/data/l2/epd/')
+    '/home/userxyz/solo/data/l2/epd/ept/')
 
-epd_ll_download() provides the same functionality for low latency data but
-doesn't work reliably.
+epd_ll_download() provides the same functionality for low latency data.
 """
 ###############################################################################
 
