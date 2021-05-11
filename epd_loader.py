@@ -482,8 +482,10 @@ def autodownload_cdf(startdate, enddate, sensor, level, path):
             tdate = int(i.split('_')[3].split('T')[0])
             tview = i.split('-')[2]
             if level.lower() == 'll':
+                print(sensor, tview, tdate, path)
                 _ = epd_ll_download(sensor, tview, tdate, path=path)
             if level.lower() == 'l2':
+                print(sensor, tview, tdate, path)
                 _ = epd_l2_download(sensor, tview, tdate, path=path)
                 
     return
