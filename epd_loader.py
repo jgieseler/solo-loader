@@ -256,8 +256,8 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
                     cdf_epd['Electron_Uncertainty'][...][:, i]
 
         # replace FILLVALUES in dataframes with np.nan
-        df_epd_p.replace(-1e+31, np.nan)
-        df_epd_e.replace(-1e+31, np.nan)
+        df_epd_p = df_epd_p.replace(-1e+31, np.nan)
+        df_epd_e = df_epd_e.replace(-1e+31, np.nan)
 
         energies_dict = {
             protons+"_Bins_Text": cdf_epd[protons+'_Bins_Text'][...],
