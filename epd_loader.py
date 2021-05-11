@@ -1,4 +1,5 @@
 import glob
+import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -181,6 +182,22 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
     #                             level.lower(), startdate, enddate, path=path)
     filelist = get_epd_filelist(sensor.lower(), level.lower(), startdate,
                                 enddate, path=path)[viewing.lower()]                 
+
+    # check for duplicate files with different version numbers
+    for _, g in itertools.groupby(filelist, lambda f: f.split('_')[:-1]):
+        dups = list(g)
+        if len(dups) > 1:
+            dups.sort()
+            print('')
+            print('WARNING: Following data files are duplicates with different version numbers:')
+            for i in dups:
+                print(i)
+            print('')
+            print('Removing following files from filelist that will be read:')
+            for n in range(len(dups)-1):
+                print(dups[n])
+                filelist.remove(dups[n])
+            print('You might want to delete these files in order to get rid of this message.')
 
     try:
         cdf_epd = pycdf.concatCDF([pycdf.CDF(f) for f in filelist])
@@ -504,7 +521,3 @@ hdf_p = pd.concat([hdf_p_0, hdf_p_1])
 
 #analog for electrons: hdf_e = cdf2df(cdf_file, "EPOCH_1") 
 """
-
-# df_protons, df_electrons, energies = \
-# read_epd_cdf('het', 'sun', 'l2', 20200920, 20200921, \
-#     path='/home/gieseler/uni/solo/data', autodownload=True)
