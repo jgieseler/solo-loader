@@ -780,25 +780,9 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
 
     return df_epd_p, df_epd_e, energies_dict
 
-"""
-# change from spacepy.pycdf to cdflib (needs heliopy)
-from heliopy.data.util import cdf2df
-import cdflib
-cdf_file_0 = cdflib.CDF('/home/gieseler/uni/solo/data/l2/epd/solo_L2_epd-ept-asun-rates_20200820_V02.cdf')
-cdf_file_1 = cdflib.CDF('/home/gieseler/uni/solo/data/l2/epd/solo_L2_epd-ept-asun-rates_20200821_V02.cdf')
-
-hdf_p_0 = cdf2df(cdf_file_0, "EPOCH") 
-hdf_p_1 = cdf2df(cdf_file_1, "EPOCH") 
-
-hdf_p = pd.concat([hdf_p_0, hdf_p_1])
-
-#analog for electrons: hdf_e = cdf2df(cdf_file, "EPOCH_1") 
-"""
-# cdf_epd['Ele_Flux'].attrs
-
-# df_protons, df_electrons, energies = read_epd_cdf('het', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True) 
+# Example codes: 
 # df_protons, df_electrons, energies = read_epd_cdflib('het', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True) 
 # df_protons, df_electrons, energies = read_epd_cdflib('ept', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True)  
-
+#
 # df_protons, df_electrons, energies = read_epd_cdflib('het', 'sun', 'l2', 20200820, 20200821, path='/home/gieseler/uni/solo/data', autodownload=True)   
 # df_protons, df_electrons, energies = read_epd_cdflib('ept', 'sun', 'l2', 20200820, 20200821, path='/home/gieseler/uni/solo/data', autodownload=True)   

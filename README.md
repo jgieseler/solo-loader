@@ -2,6 +2,11 @@
 
 Data loader for SolO/EPD EPT and HET level 2 (l2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
 
+## Requirements
+
+- heliopy, via [Anaconda](https://anaconda.org/conda-forge/heliopy) or [pip](https://pypi.org/project/HelioPy/)
+- cdflib via [pip](https://pypi.org/project/cdflib/)
+
 ## Data folder structure
 
 The `path` variable provided to the module should be the base directory where the corresponding cdf data files should be placed in subdirectories. First subfolder defines the data product `level` (`l2` or `low_latency` at the moment), the next one the `instrument` (so far only `epd`), and finally the `sensor` (`ept` or `het` for now).
