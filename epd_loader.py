@@ -9,7 +9,8 @@ import sys
 import urllib.request
 
 from pathlib import Path
-from spacepy import pycdf
+from heliopy.data.util import cdf2df
+import cdflib
 
 
 ###############################################################################
@@ -70,6 +71,7 @@ epd_ll_download() provides the same functionality for low latency data.
 
 
 def cdf_info(cdf):
+    from spacepy import pycdf
     ccdf = pycdf.CDFCopy(cdf)    # dict containing attributes copied from CDF
     for i in ccdf.keys():
         print('\"'+i+'\"')
@@ -132,7 +134,7 @@ def get_epd_filelist(sensor, level, startdate, enddate, path,
         }
     return filelist
 
-def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
+def read_epd_pycdf(sensor, viewing, level, startdate, enddate, path=None, \
                  autodownload=False):
     """
     INPUT:
@@ -153,6 +155,7 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
             - Value of lower energy bin edge in MeV
             - Value of energy bin width in MeV
     """
+    from spacepy import pycdf
 
     # lazy approach to avoid providing 'path' on my computer (Jan)    
     if path is None:
@@ -507,6 +510,276 @@ def autodownload_cdf(startdate, enddate, sensor, level, path):
 
 
 ##################################################
+
+
+def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None, \
+                 autodownload=False):
+    """
+    INPUT:
+        sensor: 'ept' or 'het' (string)
+        viewing: 'sun', 'asun', 'north', or 'south' (string)
+        level: 'll', 'l2'
+        startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
+        path: directory in which Solar Orbiter data is/should be organized;
+              e.g. '/home/gieseler/uni/solo/data/' (string)
+        autodownload: if True will try to download missing data files from SOAR
+    RETURNS:
+        1. Pandas dataframe with proton fluxes and errors (for EPT also Alpha
+           particles) in 'particles / (s cm^2 sr MeV)'
+        2. Pandas dataframe with electron fluxes and errors in
+           'particles / (s cm^2 sr MeV)'
+        3. Dictionary with energy information for all particles:
+            - String with energy channel info
+            - Value of lower energy bin edge in MeV
+            - Value of energy bin width in MeV
+    """
+
+    # lazy approach to avoid providing 'path' on my computer (Jan)    
+    if path is None:
+        path = '/home/gieseler/uni/solo/data/'
+        # if level.lower() == 'll':
+            # path = '/home/gieseler/uni/solo/data/low_latency/epd/LL02/'
+        # if level.lower() == 'l2':
+            # path = '/home/gieseler/uni/solo/data/l2/epd/'
+    # else:
+    #     # check for trailing '/' in 'path'
+    #     if path[-1] != '/':
+    #         print("'path' not ending with '/', adding it now (path should point to the directory containing the cdf files)")
+    #         path = path+'/'
+
+    # select sub-directory for corresponding sensor (EPT, HET)
+    if level.lower() == 'll':
+        path = Path(path)/'low_latency'/'epd'/sensor.lower()
+    if level.lower() == 'l2':
+        path = Path(path)/'l2'/'epd'/sensor.lower()
+
+    path = f'{path}{os.sep}'
+
+    if autodownload:
+        autodownload_cdf(startdate, enddate, sensor.lower(), level.lower(), path)
+    
+    # filelist = get_epd_filelist(sensor.lower(), viewing.lower(),
+    #                             level.lower(), startdate, enddate, path=path)
+    filelist = get_epd_filelist(sensor.lower(), level.lower(), startdate,
+                                enddate, path=path)[viewing.lower()]                 
+
+    # check for duplicate files with different version numbers
+    for _, g in itertools.groupby(filelist, lambda f: f.split('_')[:-1]):
+        dups = list(g)
+        if len(dups) > 1:
+            dups.sort()
+            print('')
+            print('WARNING: Following data files are duplicates with different version numbers:')
+            for i in dups:
+                print(i)
+            print('')
+            print('Removing following files from filelist that will be read:')
+            for n in range(len(dups)-1):
+                print(dups[n])
+                filelist.remove(dups[n])
+            print('You might want to delete these files in order to get rid of this message.')
+
+    if len(filelist) == 0:
+        print('')
+        print('WARNING: No corresponding data files found! Try different path or autodownload.')
+        df_epd_p = []
+        df_epd_e = []
+        energies_dict = []
+    else:
+
+        """ <-- get column names of dataframe """
+        if sensor.lower() == 'ept':
+            if level.lower() == 'll':
+                protons = 'Prot'
+                electrons = 'Ele'
+                e_epoch = 'EPOCH'
+            if level.lower() == 'l2':
+                protons = 'Ion'
+                electrons = 'Electron'
+                e_epoch = 'EPOCH_1'
+        if sensor.lower() == 'het':
+            if level.lower() == 'll':
+                protons = 'H'
+                electrons = 'Ele'
+                e_epoch = 'EPOCH'
+            if level.lower() == 'l2':
+                protons = 'H'  # EPOCH
+                electrons = 'Electron'  # EPOCH_4, QUALITY_FLAG_4
+                e_epoch = 'EPOCH_4'
+
+        # load cdf files
+        t_cdf_file = cdflib.CDF(filelist[0])
+        df_p = cdf2df(t_cdf_file, "EPOCH") 
+        df_e = cdf2df(t_cdf_file, e_epoch) 
+
+        if len(filelist)>1:
+            for f in filelist[1:]:
+                t_cdf_file = cdflib.CDF(f)
+                t_df_p = cdf2df(t_cdf_file, "EPOCH") 
+                t_df_e = cdf2df(t_cdf_file, e_epoch) 
+                df_p = pd.concat([df_p, t_df_p])
+                df_e = pd.concat([df_e, t_df_e])       
+        
+        # df_p = df_p.drop(columns=['SCET'])
+        # df_p_flux = df_p[flux_p_channels]
+
+                # p intensities:
+        flux_p_channels = [protons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(protons+f'_Flux')['Dim_Sizes'][0])]
+        # p errors:
+        if level.lower() == 'll':
+            flux_sigma_p_channels = [protons+f'_Flux_Sigma_{i}' for i in
+                                     range(t_cdf_file.varinq(protons+f'_Flux')['Dim_Sizes'][0])]
+        if level.lower() == 'l2':
+            flux_sigma_p_channels = [protons+f'_Uncertainty_{i}' for i in
+                                     range(t_cdf_file.varinq(protons+f'_Flux')['Dim_Sizes'][0])]
+            # p rates:
+            rate_p_channels = [protons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(protons+f'_Rate')['Dim_Sizes'][0])]
+
+        if sensor.lower() == 'ept':
+            # alpha intensities:
+            flux_a_channels = [f'Alpha_Flux_{i}' for i in range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+            # alpha errors:
+            if level.lower() == 'll':
+                flux_sigma_a_channels = [f'Alpha_Flux_Sigma_{i}' for i in
+                                        range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+            if level.lower() == 'l2':
+                flux_sigma_a_channels = [f'Alpha_Uncertainty_{i}' for i in
+                                        range(t_cdf_file.varinq("Alpha_Flux")['Dim_Sizes'][0])]
+                # alpha rates:
+                rate_a_channels = [f'Alpha_Rate_{i}' for i in range(t_cdf_file.varinq("Alpha_Rate")['Dim_Sizes'][0])]
+        
+        # e intensities:
+        flux_e_channels = [electrons+f'_Flux_{i}' for i in range(t_cdf_file.varinq(electrons+f'_Flux')['Dim_Sizes'][0])]
+        # e errors:
+        if level.lower() == 'll':
+            flux_sigma_e_channels = [f'Ele_Flux_Sigma_{i}' for i in
+                                     range(t_cdf_file.varinq(electrons+f'_Flux')['Dim_Sizes'][0])]
+        if level.lower() == 'l2':
+            flux_sigma_e_channels = [f'Electron_Uncertainty_{i}' for i in
+                                     range(t_cdf_file.varinq(electrons+f'_Flux')['Dim_Sizes'][0])]
+            # e rates:
+            rate_e_channels = [electrons+f'_Rate_{i}' for i in range(t_cdf_file.varinq(electrons+f'_Rate')['Dim_Sizes'][0])]
+
+        # print(flux_p_channels)
+        # print(flux_sigma_p_channels)
+        # print(flux_e_channels)
+        # print(flux_sigma_e_channels)
+        # print(flux_a_channels)
+        # print(flux_sigma_a_channels)
+
+        if level.lower() == 'l2':
+            if sensor.lower() == 'het':
+                df_epd_p = pd.concat(
+                    [df_p[flux_p_channels], df_p[flux_sigma_p_channels],
+                     df_p[rate_p_channels], df_p['DELTA_EPOCH'],
+                     df_p['QUALITY_FLAG'], df_p['QUALITY_BITMASK']], \
+                    axis=1, \
+                    keys=['H_Flux', 'H_Uncertainty', 'H_Rate', \
+                          'DELTA_EPOCH', 'QUALITY_FLAG', 'QUALITY_BITMASK'])
+
+                df_epd_e = pd.concat([df_e[flux_e_channels],
+                                      df_e[flux_sigma_e_channels],
+                                      df_e[rate_e_channels],
+                                      df_e['DELTA_EPOCH_4'],
+                                      df_e['QUALITY_FLAG_4'],
+                                      df_e['QUALITY_BITMASK_4']], axis=1,
+                                      keys=['Electron_Flux',
+                                            'Electron_Uncertainty',
+                                            'Electron_Rate', 
+                                            'DELTA_EPOCH_4',
+                                            'QUALITY_FLAG_4',
+                                            'QUALITY_BITMASK_4'])
+            # t_cdf_file.varattsget("H_Flux")["FILLVAL"][0] = -1e+31
+            # t_cdf_file.varattsget("Electron_Flux")["FILLVAL"][0] = -1e+31
+            # t_cdf_file.varinq('Electron_Flux')['Pad'][0] = -1e+30
+            # t_cdf_file.varinq('H_Flux')['Pad'][0] = -1e+30
+
+            if sensor.lower() == 'ept':
+                df_epd_p = pd.concat(
+                    [df_p[flux_p_channels], df_p[flux_sigma_p_channels], 
+                     df_p[rate_p_channels], df_p[flux_a_channels], 
+                     df_p[flux_sigma_a_channels], df_p[rate_a_channels], \
+                     df_p['DELTA_EPOCH'], df_p['QUALITY_FLAG'], 
+                     df_p['QUALITY_BITMASK']], \
+                    axis=1,\
+                    keys=['Ion_Flux', 'Ion_Uncertainty', 'Ion_Rate', 
+                          'Alpha_Flux', 'Alpha_Uncertainty', 'Alpha_Rate', \
+                          'DELTA_EPOCH', 'QUALITY_FLAG', 'QUALITY_BITMASK'])
+            # t_cdf_file.varinq('Ion_Flux')['Pad'][0] = -1e+30
+            # t_cdf_file.varattsget("Ion_Flux")["FILLVAL"][0] = -1e+31
+
+                df_epd_e = pd.concat([df_e[flux_e_channels],
+                                      df_e[flux_sigma_e_channels],
+                                      df_e[rate_e_channels],
+                                      df_e['DELTA_EPOCH_1'],
+                                      df_e['QUALITY_FLAG_1'],
+                                      df_e['QUALITY_BITMASK_1']], axis=1,
+                                      keys=['Electron_Flux',
+                                            'Electron_Uncertainty',
+                                            'Electron_Rate', 
+                                            'DELTA_EPOCH_1',
+                                            'QUALITY_FLAG_1',
+                                            'QUALITY_BITMASK_1'])
+                # t_cdf_file.varinq('Electron_Rate')['Pad'][0] = -1e+30
+
+        if level.lower() == 'll':
+            if sensor.lower() == 'het':
+                df_epd_p = pd.concat(
+                    [df_p[flux_p_channels], df_p[flux_sigma_p_channels]], \
+                    axis=1, keys=['H_Flux', 'H_Uncertainty', 'QUALITY_FLAG'])
+                # t_cdf_file.varattsget("H_Flux")["FILLVAL"][0] = -1e+31
+                # t_cdf_file.varattsget("Ele_Flux")["FILLVAL"][0] = -1e+31
+                # t_cdf_file.varinq('Ele_Flux')['Pad'][0] = -1e+30
+
+            if sensor.lower() == 'ept':
+                df_epd_p = pd.concat(
+                    [df_p[flux_p_channels], df_p[flux_sigma_p_channels], \
+                     df_p[flux_a_channels], df_p[flux_sigma_a_channels], \
+                     df_p['QUALITY_FLAG']], \
+                    axis=1, keys=['Ion_Flux', 'Ion_Uncertainty', 
+                                'Alpha_Flux', 'Alpha_Uncertainty',
+                                'QUALITY_FLAG'])
+                # t_cdf_file.varinq('Ele_Flux')['Pad'][0] = -1e+30
+                # t_cdf_file.varattsget("Ele_Flux")["FILLVAL"][0] = -1e+31
+
+            df_epd_e = pd.concat([df_e[flux_e_channels],
+                                  df_e[flux_sigma_e_channels],
+                                  df_e['QUALITY_FLAG']], axis=1,
+                                  keys=['Electron_Flux',
+                                        'Electron_Uncertainty',
+                                        'QUALITY_FLAG'])
+
+        # replace FILLVALUES in dataframes with np.nan
+        # t_cdf_file.varattsget("Ion_Flux")["FILLVAL"][0] = -1e+31
+        # same for l2 & ll and het & ept and e, p/ion, alpha
+        df_epd_p = df_epd_p.replace(-1e+31, np.nan)
+        df_epd_e = df_epd_e.replace(-1e+31, np.nan)
+        # NB: t_cdf_file.varinq('Ion_Flux')['Pad'][0] = -1e+30
+
+        energies_dict = {
+            protons+"_Bins_Text": t_cdf_file.varget(protons+'_Bins_Text'),
+            protons+"_Bins_Low_Energy": t_cdf_file.varget(protons+'_Bins_Low_Energy'),
+            protons+"_Bins_Width": t_cdf_file.varget(protons+'_Bins_Width'),
+            electrons+"_Bins_Text": t_cdf_file.varget(electrons+'_Bins_Text'),
+            electrons+"_Bins_Low_Energy":
+                t_cdf_file.varget(electrons+'_Bins_Low_Energy'),
+            electrons+"_Bins_Width": t_cdf_file.varget(electrons+'_Bins_Width')
+            }
+
+        if sensor.lower() == 'ept':
+            energies_dict["Alpha_Bins_Text"] = t_cdf_file.varget('Alpha_Bins_Text')
+            energies_dict["Alpha_Bins_Low_Energy"] = \
+                t_cdf_file.varget('Alpha_Bins_Low_Energy')
+            energies_dict["Alpha_Bins_Width"] = t_cdf_file.varget('Alpha_Bins_Width')
+    
+
+    '''
+    Careful if adding more species - they might have different EPOCH
+    dependencies and cannot easily be put in the same dataframe!
+    '''
+
+    return df_epd_p, df_epd_e, energies_dict
+
 """
 # change from spacepy.pycdf to cdflib (needs heliopy)
 from heliopy.data.util import cdf2df
@@ -521,3 +794,11 @@ hdf_p = pd.concat([hdf_p_0, hdf_p_1])
 
 #analog for electrons: hdf_e = cdf2df(cdf_file, "EPOCH_1") 
 """
+# cdf_epd['Ele_Flux'].attrs
+
+# df_protons, df_electrons, energies = read_epd_cdf('het', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True) 
+# df_protons, df_electrons, energies = read_epd_cdflib('het', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True) 
+# df_protons, df_electrons, energies = read_epd_cdflib('ept', 'sun', 'll', 20210416, 20210417, path='/home/gieseler/uni/solo/data', autodownload=True)  
+
+# df_protons, df_electrons, energies = read_epd_cdflib('het', 'sun', 'l2', 20200820, 20200821, path='/home/gieseler/uni/solo/data', autodownload=True)   
+# df_protons, df_electrons, energies = read_epd_cdflib('ept', 'sun', 'l2', 20200820, 20200821, path='/home/gieseler/uni/solo/data', autodownload=True)   
