@@ -5,7 +5,7 @@ Data loader for SolO/EPD EPT and HET level 2 (l2) and low latency (ll) data prov
 ## Requirements
 
 - heliopy, via [Anaconda](https://anaconda.org/conda-forge/heliopy) or [pip](https://pypi.org/project/HelioPy/)
-- cdflib via [pip](https://pypi.org/project/cdflib/)
+- cdflib, via [Anaconda](https://anaconda.org/conda-forge/cdflib) or [pip](https://pypi.org/project/cdflib/)
 
 ## Data folder structure
 
