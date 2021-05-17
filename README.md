@@ -13,7 +13,7 @@ The `path` variable provided to the module should be the base directory where th
 
 For example, the folder structure could look like this: `/home/userxyz/solo/data/l2/epd/het`. In this case, you should call the loader with `path=/home/userxyz/solo/data`; i.e., the base directory for the data.
 
-*Hint: You can use the (automatic) download function described in one of the following sections to let the subfolders be created initially automatically.*
+*Hint: You can use the (automatic) download function described in one of the following sections to let the subfolders be created initially automatically. (NB: It might be that you need to run the code with `sudo`/`admin` privileges in order to be able to create new folders on your system.)*
 
 ## Example 1 - low latency data
 
