@@ -66,14 +66,16 @@ plt.show()
 ```python
 from epd_loader import *
 
+# set your local path here
+lpath = '/home/userxyz/solo/data'
+
 # load data
 df_protons, df_electrons, energies = \
     read_epd_cdf('ept', 'sun', 'l2', 20200708,20200724,
-                 path='/home/userxyz/solo/data',
-                 autodownload=True)
+                 path=lpath, autodownload=True)
 
 # change time resolution to get smoother curve (resample with mean)
-resample = '30min'
+resample = '60min'
 
 # plot selection of channels
 for channel in [0, 8, 16, 26]:
@@ -97,7 +99,10 @@ NB: This is just an example reproduction with energy channels not combined and d
 ```python
 from epd_loader import *
 
+# set your local path here
 lpath = '/home/userxyz/solo/data'
+
+# load data
 df_protons_sun, df_electrons_sun, energies = \
     read_epd_cdf('ept', 'sun', 'l2', 20201210, 20201211,
                  path=lpath, autodownload=True)
@@ -111,7 +116,7 @@ df_protons_north, df_electrons_north, energies = \
     read_epd_cdf('ept', 'north', 'l2', 20201210, 20201211,
                  path=lpath, autodownload=True)
 
-# get mean intensities of two energy channels; 'channel' defines the lower one
+# plot mean intensities of two energy channels; 'channel' defines the lower one
 channel = 6
 ax = pd.concat([df_electrons_sun['Electron_Flux'][f'Electron_Flux_{channel}'],
                 df_electrons_sun['Electron_Flux'][f'Electron_Flux_{channel+1}']],
