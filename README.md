@@ -77,21 +77,31 @@ df_protons, df_electrons, energies = \
 # change time resolution to get smoother curve (resample with mean)
 resample = '60min'
 
+fig, axs = plt.subplots(2, sharex=True)
+fig.suptitle('EPT Sun')
+
 # plot selection of channels
 for channel in [0, 8, 16, 26]:
-    ax =  df_electrons['Electron_Flux'][f'Electron_Flux_{channel}']\
-            .resample(resample).mean().plot(logy=True,
-            label=energies["Electron_Bins_Text"][channel][0])
+    df_electrons['Electron_Flux'][f'Electron_Flux_{channel}']\
+        .resample(resample).mean().plot(ax = axs[0], logy=True,
+        label=energies["Electron_Bins_Text"][channel][0])
+for channel in [6, 22, 32, 48]:
+    df_protons['Ion_Flux'][f'Ion_Flux_{channel}']\
+        .resample(resample).mean().plot(ax = axs[1], logy=True,
+        label=energies["Ion_Bins_Text"][channel][0])
 
-plt.ylim([0.3, 4e6])
+axs[0].set_ylim([0.3, 4e6])
+axs[1].set_ylim([0.01, 5e8])
 
-ax.set_ylabel("Electron flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
-plt.title('EPT Sun')
-plt.legend()
+axs[0].set_ylabel("Electron flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
+axs[1].set_ylabel("Ion flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
+axs[0].legend()
+axs[1].legend()
+plt.subplots_adjust(hspace=0)
 plt.show()
 ```
 
-NB: This is just an example reproduction with energy channels not combined and different time resolution!
+NB: This is just a similar example with different energy channels (smaller, not combined) and different time resolution!
 ![Figure](../main/examples/gh2021_fig_2.png)
 
 ## Example 4 - reproducing electron data from Fig. 2 in Wimmer-Schweingruber et al. 2021<sup>[2](#ws2021)</sup>
