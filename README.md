@@ -68,12 +68,12 @@ from epd_loader import *
 
 # load data
 df_protons, df_electrons, energies = \
-    read_epd_cdf('ept', 'sun', 'l2', 20200708,20200725,
-                 path='/home/gieseler/uni/solo/data',
+    read_epd_cdf('ept', 'sun', 'l2', 20200708,20200724,
+                 path='/home/userxyz/solo/data',
                  autodownload=True)
 
 # change time resolution to get smoother curve (resample with mean)
-resample = '60min'
+resample = '30min'
 
 # plot selection of channels
 for channel in [0, 8, 16, 26]:
@@ -81,18 +81,23 @@ for channel in [0, 8, 16, 26]:
             .resample(resample).mean().plot(logy=True,
             label=energies["Electron_Bins_Text"][channel][0])
 
+plt.ylim([0.3, 4e6])
+
 ax.set_ylabel("Electron flux\n"+r"(cm$^2$ sr s MeV)$^{-1}$")
 plt.title('EPT Sun')
 plt.legend()
 plt.show()
 ```
 
+NB: This is just an example reproduction with energy channels not combined and different time resolution!
+![Figure](../main/examples/gh2021_fig_2.png)
+
 ## Example 4 - reproducing electron data from Fig. 2 in Wimmer-Schweingruber et al. 2021<sup>[2](#ws2021)</sup>
 
 ```python
 from epd_loader import *
 
-lpath = '/home/gieseler/uni/solo/data'
+lpath = '/home/userxyz/solo/data'
 df_protons_sun, df_electrons_sun, energies = \
     read_epd_cdf('ept', 'sun', 'l2', 20201210, 20201211,
                  path=lpath, autodownload=True)
@@ -131,6 +136,7 @@ plt.legend()
 plt.show()
 ```
 
+NB: This is just an example reproduction!
 ![Figure](../main/examples/ws2021_fig_2d.png)
 
 ## Data download within Python
