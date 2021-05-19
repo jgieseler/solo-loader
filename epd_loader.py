@@ -112,13 +112,13 @@ def get_epd_filelist(sensor, level, startdate, enddate, path,
                       str(i) + t_str + '_V*.cdf')
         filelist_asun = filelist_asun + \
             glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-asun-rates_' +
-                      str(i) + t_str + '_V???.cdf')
+                      str(i) + t_str + '_V*.cdf')
         filelist_north = filelist_north + \
             glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-north-rates_' +
                       str(i) + t_str + '_V*.cdf')
         filelist_south = filelist_south + \
             glob.glob(path+'solo_'+l_str+'_epd-'+sensor+'-south-rates_' +
-                      str(i) + t_str + '_V???.cdf')
+                      str(i) + t_str + '_V*.cdf')
 
     if filenames_only:
         filelist_sun = [os.path.basename(x) for x in filelist_sun]
