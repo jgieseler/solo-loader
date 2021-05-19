@@ -565,6 +565,7 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
     if level.lower() == 'l2':
         path = Path(path)/'l2'/'epd'/sensor.lower()
 
+    # add a OS-specific '/' to end end of 'path'
     path = f'{path}{os.sep}'
 
     # if no 'enddate' is given, get data only for single day of 'startdate'
