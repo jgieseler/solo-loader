@@ -521,19 +521,21 @@ def autodownload_cdf(startdate, enddate, sensor, level, path):
 ##################################################
 
 
-def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None,
+def read_epd_cdf(sensor, viewing, level, startdate, enddate=None, path=None,
                  autodownload=False):
     """
     INPUT:
         sensor: 'ept' or 'het' (string)
         viewing: 'sun', 'asun', 'north', or 'south' (string)
-        level: 'll', 'l2'
-        startdate, enddate: YYYYMMDD, e.g., 20210415 (integer)
+        level: 'll' or 'l2' (string)
+        startdate,
+        enddate:    YYYYMMDD, e.g., 20210415 (integer)
+                    (if no enddate is given, 'enddate = startdate' will be set)
         path: directory in which Solar Orbiter data is/should be organized;
               e.g. '/home/gieseler/uni/solo/data/' (string)
         autodownload: if True will try to download missing data files from SOAR
     RETURNS:
-        1. Pandas dataframe with proton fluxes and errors (for EPT also Alpha
+        1. Pandas dataframe with proton fluxes and errors (for EPT also alpha
            particles) in 'particles / (s cm^2 sr MeV)'
         2. Pandas dataframe with electron fluxes and errors in
            'particles / (s cm^2 sr MeV)'
@@ -564,6 +566,10 @@ def read_epd_cdf(sensor, viewing, level, startdate, enddate, path=None,
         path = Path(path)/'l2'/'epd'/sensor.lower()
 
     path = f'{path}{os.sep}'
+
+    # if no 'enddate' is given, get data only for single day of 'startdate'
+    if enddate is None:
+        enddate = startdate
 
     if autodownload:
         autodownload_cdf(startdate, enddate, sensor.lower(), level.lower(),
