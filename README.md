@@ -106,7 +106,7 @@ ax = df_electrons.plot(logy=True, subplots=True, figsize=(20,60))
 plt.show()
 ```
 
-## Example 3 - plotting electron data from Fig. 2 in Gómez-Herrero et al. 2021<sup>[1](#gh2021)</sup>
+## Example 3 - reproducing EPT data from Fig. 2 in Gómez-Herrero et al. 2021<sup>[1](#gh2021)</sup>
 
 ```python
 from epd_loader import *
@@ -146,10 +146,10 @@ plt.subplots_adjust(hspace=0)
 plt.show()
 ```
 
-NB: This is just a similar example with different energy channels (smaller, not combined) and different time resolution!
+**NB: This is just an approximate reproduction with different energy channels (smaller, not combined) and different time resolution!**
 ![Figure](../main/examples/gh2021_fig_2.png)
 
-## Example 4 - reproducing electron data from Fig. 2 in Wimmer-Schweingruber et al. 2021<sup>[2](#ws2021)</sup>
+## Example 4 - reproducing EPT data from Fig. 2 in Wimmer-Schweingruber et al. 2021<sup>[2](#ws2021)</sup>
 
 ```python
 from epd_loader import *
@@ -196,7 +196,7 @@ plt.legend()
 plt.show()
 ```
 
-NB: This is just an example reproduction!
+**NB: This is just an approximate reproduction; e.g., the channel combination is a over-simplified approximation!**
 ![Figure](../main/examples/ws2021_fig_2d.png)
 
 ## References
