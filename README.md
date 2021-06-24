@@ -1,11 +1,48 @@
 # solo-loader
 
-Data loader for SolO/EPD EPT and HET level 2 (l2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
+Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
 
 ## Requirements
 
 - heliopy, via [Anaconda](https://anaconda.org/conda-forge/heliopy) or [pip](https://pypi.org/project/HelioPy/)
 - cdflib, via [Anaconda](https://anaconda.org/conda-forge/cdflib) or [pip](https://pypi.org/project/cdflib/)
+
+## Usage
+
+The standard usecase is to utilize the `epd_load` function, which returns Pandas dataframe(s) of the EPD measurements and a dictionary containing information on the energy channels.
+```python
+from epd_loader import *
+
+df_1, df_2, energies = \
+    epd_load(sensor, viewing, level, startdate, enddate, path, autodownload)
+```
+
+### Input
+
+- `sensor`: `ept`, `het`, or `step` (string)
+- `viewing`: `sun`, `asun`, `north`, or `south` (string); not needed for `sensor = step`
+- `level`: `ll` or `l2` (string)
+- `startdate`, `enddate`: YYYYMMDD, e.g., 20210415 (integer) (if no `enddate` is provided, `enddate = startdate` will be used)
+- `path`: directory in which Solar Orbiter data is/should be organized; e.g. `/home/gieseler/uni/solo/data/` (string)
+- `autodownload`: if `True` will try to download missing data files from SOAR (bolean)
+
+### Return
+
+- For `sensor` = `ept` or `het`:
+    1. Pandas dataframe with proton fluxes and errors (for EPT also alpha particles) in 'particles / (s cm^2 sr MeV)'
+    2. Pandas dataframe with electron fluxes and errors in 'particles / (s cm^2 sr MeV)'
+    3. Dictionary with energy information for all particles:
+        - String with energy channel info
+        - Value of lower energy bin edge in MeV
+        - Value of energy bin width in MeV
+
+- For `sensor` = `step`:
+    1. Pandas dataframe with fluxes and errors in 'particles / (s cm^2 sr MeV)'
+    2. Dictionary with energy information for all particles:
+        - String with energy channel info
+        - Value of lower energy bin edge in MeV
+        - Value of energy bin width in MeV
+
 
 ## Data folder structure
 
@@ -21,15 +58,15 @@ Data files can be downloaded from <http://soar.esac.esa.int/soar> directly from 
 
 ### Automatic download
 
-While using `read_epd_cdf()` to obtain the data, one can choose to automatically download missing data files. For that, just add `autodownload=True` to the call of `read_epd_cdf()`:
+While using `epd_load()` to obtain the data, one can choose to automatically download missing data files. For that, just add `autodownload=True` to the function call:
 
 ```python
 from epd_loader import *
 
 df_protons, df_electrons, energies = \
-read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, \
-    path='/home/userxyz/solo/data/', \
-    autodownload=True)
+    epd_load(sensor='het', viewing='sun', level='l2', 
+             startdate=20200820, enddate=20200821, \
+             path='/home/userxyz/solo/data/', autodownload=True)
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -49,7 +86,7 @@ Level 2 data *can* be manually downloaded using `epd_l2_download()`. But because
 ```python
 from epd_loader import *
 
-epd_l2_download('ept', 'north', 20200820, '/home/userxyz/solo/data/l2/epd/ept/')
+epd_l2_download(20200820, '/home/userxyz/solo/data/l2/epd/ept/', 'ept', 'north')
 ```
 
 `epd_ll_download()` provides the same functionality for low latency data:
@@ -57,7 +94,7 @@ epd_l2_download('ept', 'north', 20200820, '/home/userxyz/solo/data/l2/epd/ept/')
 ```python
 from epd_loader import *
 
-epd_ll_download('ept', 'north', 20200820, '/home/userxyz/solo/data/low_latency/epd/ept/')
+epd_ll_download(20200820, '/home/userxyz/solo/data/low_latency/epd/ept/', 'ept', 'north')
 ```
 
 ## Example 1 - low latency data
@@ -72,8 +109,9 @@ and 'het' telescopes of SolO/EPD.
 from epd_loader import *
 
 df_protons, df_electrons, energies = \
-read_epd_cdf('ept', 'north', 'll', 20210415, 20210416, \
-    path='/home/userxyz/solo/data/')
+    epd_load(sensor='ept', viewing='north', level='ll', 
+             startdate=20210415, enddate=20210416, \
+             path='/home/userxyz/solo/data/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -94,8 +132,9 @@ two Pandas dataframes (one for protons & alphas, one for electrons).
 from epd_loader import *
 
 df_protons, df_electrons, energies = \
-read_epd_cdf('het', 'sun', 'l2', 20200820, 20200821, \
-    path='/home/userxyz/solo/data/')
+    epd_load(sensor='het', viewing='sun', level='l2', 
+             startdate=20200820, enddate=20200821, \
+             path='/home/userxyz/solo/data/')
 
 # plot protons and alphas
 ax = df_protons.plot(logy=True, subplots=True, figsize=(20,60))
@@ -116,8 +155,8 @@ lpath = '/home/userxyz/solo/data'
 
 # load data
 df_protons, df_electrons, energies = \
-    read_epd_cdf('ept', 'sun', 'l2', 20200708,20200724,
-                 path=lpath, autodownload=True)
+    epd_load(sensor='ept', viewing='sun', level='l2', startdate=20200708, 
+             enddate=20200724, path=lpath, autodownload=True)
 
 # change time resolution to get smoother curve (resample with mean)
 resample = '60min'
@@ -159,17 +198,21 @@ lpath = '/home/userxyz/solo/data'
 
 # load data
 df_protons_sun, df_electrons_sun, energies = \
-    read_epd_cdf('ept', 'sun', 'l2', 20201210, 20201211,
-                 path=lpath, autodownload=True)
+    epd_load(sensor='ept', viewing='sun', level='l2', 
+             startdate=20201210, enddate=20201211,
+             path=lpath, autodownload=True)
 df_protons_asun, df_electrons_asun, energies = \
-    read_epd_cdf('ept', 'asun', 'l2', 20201210, 20201211,
-                 path=lpath, autodownload=True)
+    epd_load(sensor='ept', viewing='asun', level='l2', 
+             startdate=20201210, enddate=20201211,
+             path=lpath, autodownload=True)
 df_protons_south, df_electrons_south, energies = \
-    read_epd_cdf('ept', 'south', 'l2', 20201210, 20201211,
-                 path=lpath, autodownload=True)
+    epd_load(sensor='ept', viewing='south', level='l2', 
+             startdate=20201210, enddate=20201211,
+             path=lpath, autodownload=True)
 df_protons_north, df_electrons_north, energies = \
-    read_epd_cdf('ept', 'north', 'l2', 20201210, 20201211,
-                 path=lpath, autodownload=True)
+    epd_load(sensor='ept', viewing='north', level='l2', 
+             startdate=20201210, enddate=20201211,
+             path=lpath, autodownload=True)
 
 # plot mean intensities of two energy channels; 'channel' defines the lower one
 channel = 6
