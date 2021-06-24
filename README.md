@@ -7,6 +7,10 @@ Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency (ll) da
 - heliopy, via [Anaconda](https://anaconda.org/conda-forge/heliopy) or [pip](https://pypi.org/project/HelioPy/)
 - cdflib, via [Anaconda](https://anaconda.org/conda-forge/cdflib) or [pip](https://pypi.org/project/cdflib/)
 
+## Installation
+
+Install all the requirements, download [epd_loader.py](https://raw.githubusercontent.com/jgieseler/solo-loader/main/epd_loader.py), and place it in your working directory. Then access it as described in the **Usage** section.
+
 ## Usage
 
 The standard usecase is to utilize the `epd_load` function, which returns Pandas dataframe(s) of the EPD measurements and a dictionary containing information on the energy channels.
