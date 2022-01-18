@@ -1,3 +1,7 @@
+# ARCHIVED
+
+⚠️ This repository is archived, please visit [https://github.com/jgieseler/solo-epd-loader](https://github.com/jgieseler/solo-epd-loader) for the current version of this package! ⚠️
+
 # solo-loader
 
 Data loader for SolO/EPD EPT, HET, and STEP level 2 (l2) and low latency (ll) data provided by CDF files from <http://soar.esac.esa.int/soar>.
